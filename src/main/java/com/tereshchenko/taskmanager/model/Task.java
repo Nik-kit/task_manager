@@ -1,12 +1,11 @@
-package com.tereshchenko.taskmanager.entity;
+package com.tereshchenko.taskmanager.model;
 
-import com.tereshchenko.taskmanager.model.Priority;
-import com.tereshchenko.taskmanager.model.Status;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,6 +18,8 @@ public class Task {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    private LocalDateTime createdAt;
 
     private String title;
 
@@ -36,7 +37,6 @@ public class Task {
     @ManyToOne
     private User executor;
 
-    @OneToMany(mappedBy = "task")
+    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Comment> comments = new ArrayList<>();
-
 }

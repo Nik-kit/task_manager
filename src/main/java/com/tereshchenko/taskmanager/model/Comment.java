@@ -1,4 +1,4 @@
-package com.tereshchenko.taskmanager.entity;
+package com.tereshchenko.taskmanager.model;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
