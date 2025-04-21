@@ -17,21 +17,21 @@ public class GlobalExceptionHandler {
 
     //403
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<Map<String, Object>> handleAccessDeniedException(AccessDeniedException ex, HttpServletRequest request){
+    public ResponseEntity<Map<String, Object>> handleAccessDeniedException(HttpServletRequest request){
 
         return buildErrorResponse("Not enough access", HttpStatus.FORBIDDEN, request.getRequestURI());
     }
 
     //400
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, Object>> handleValidationException(MethodArgumentNotValidException ex, HttpServletRequest request){
+    public ResponseEntity<Map<String, Object>> handleValidationException(HttpServletRequest request){
 
         return buildErrorResponse("Invalid data", HttpStatus.BAD_REQUEST, request.getRequestURI());
     }
 
     //500
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, Object>> handleGenericException(Exception ex, HttpServletRequest request) {
+    public ResponseEntity<Map<String, Object>> handleGenericException(HttpServletRequest request) {
         return buildErrorResponse("Internal server error", HttpStatus.INTERNAL_SERVER_ERROR, request.getRequestURI());
     }
 

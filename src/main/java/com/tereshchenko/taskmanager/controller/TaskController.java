@@ -1,15 +1,10 @@
 package com.tereshchenko.taskmanager.controller;
 
 import com.tereshchenko.taskmanager.model.Task;
-import com.tereshchenko.taskmanager.model.User;
 import com.tereshchenko.taskmanager.service.TaskService;
-import com.tereshchenko.taskmanager.service.UserService;
-import org.apache.tomcat.util.net.openssl.ciphers.Authentication;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
