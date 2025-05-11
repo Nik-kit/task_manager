@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.lang.reflect.Field;
+import java.time.LocalDate;
 import java.util.*;
 
 public class DynamicSpecification {
@@ -20,6 +21,7 @@ public class DynamicSpecification {
         Set<String> ignoredFields = new HashSet<>();
 
         for (String field : ignoredField) {
+
             ignoredFields.add(field.trim());
         }
 
@@ -46,6 +48,12 @@ public class DynamicSpecification {
 
                             predicates.add(cb.like(cb.lower(root.get(fieldName)), "%" + value.toString().toLowerCase() + "%"));
 
+                        } else if (fieldType.equals(LocalDate.class)) {
+
+                            LocalDate dateValue = (LocalDate) value;
+
+                            predicates.add(cb.equal(cb.function("DATE", LocalDate.class, root.get(fieldName)), dateValue));
+
                         } else if (field.isAnnotationPresent(ManyToOne.class) || field.isAnnotationPresent(OneToOne.class)) {
 
                             try {
@@ -59,18 +67,23 @@ public class DynamicSpecification {
                                 Object idValue = idField.get(value);
 
                                 if (idValue != null) {
+
                                     Join<Object, Object> join = root.join(fieldName);
+
                                     predicates.add(cb.equal(join.get("id"), idValue));
                                 }
 
                             } catch (NoSuchFieldException | IllegalAccessException e) {
+
                                 log.warn("Error processing field '{}' when filtering: {}", fieldName, e.getMessage());
                             }
                         } else {
+
                             predicates.add(cb.equal(root.get(fieldName), value));
                         }
                     }
                 } catch (IllegalAccessException e){
+
                     log.warn("Error processing field '{}' when filtering: {}", field, e.getMessage());
                 }
             }

@@ -1,6 +1,5 @@
 package com.tereshchenko.taskmanager.config;
 
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.access.AccessDeniedException;
@@ -20,6 +19,6 @@ public class CustomAccessDeniedHandler implements AccessDeniedHandler {
 
         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
         response.setContentType("application/json");
-        response.getWriter().write("{\"error\": \"Not enough access\"}");
+        response.getWriter().write("{\\\"error\\\": \\\"Access Denied\\\", \\\"message\\\": \\\"You do not have permission to perform this action.\\\"}");
     }
 }

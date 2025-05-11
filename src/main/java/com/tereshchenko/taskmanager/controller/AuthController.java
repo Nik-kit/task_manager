@@ -2,6 +2,8 @@ package com.tereshchenko.taskmanager.controller;
 
 import com.tereshchenko.taskmanager.service.JwtService;
 import com.tereshchenko.taskmanager.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -13,6 +15,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
+@Tag(name = "Authorization Controller", description = "Handles user authentication and JWT token generation")
 public class AuthController {
 
     @Autowired
@@ -25,6 +28,7 @@ public class AuthController {
     private UserService userService;
 
     @PostMapping("/login")
+    @Operation(summary = "Login", description = "Authenticates a user and returns a JWT token")
     public Map<String, String> login(@RequestBody Map<String, String> request) {
 
         try {
@@ -34,9 +38,6 @@ public class AuthController {
             authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
 
             UserDetails user = userService.loadUserByUsername(username);
-
-            System.out.println("Authorities: ");
-            user.getAuthorities().forEach(a -> System.out.println(a.getAuthority()));
 
             String token = jwtService.generateToken(user);
 

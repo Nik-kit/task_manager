@@ -37,18 +37,22 @@ public class JwtService {
     }
 
     public String extractUsername(String token) {
+
         return extractClaim(token, Claims::getSubject);
     }
 
     public boolean isTokenValid(String token, UserDetails userDetails) {
+
         return extractUsername(token).equals(userDetails.getUsername()) && !isTokenExpired(token);
     }
 
     private boolean isTokenExpired(String token) {
+
         return extractClaim(token, Claims::getExpiration).before(new Date());
     }
 
     private <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
+
         Claims claims = Jwts.parserBuilder()
                 .setSigningKey(getSigningKey())
                 .build()
@@ -65,6 +69,7 @@ public class JwtService {
     }
 
     public List<? extends GrantedAuthority> extractAuthorities(String token) {
+
         Claims claims = Jwts.parserBuilder()
                 .setSigningKey(getSigningKey())
                 .build()
@@ -72,6 +77,7 @@ public class JwtService {
                 .getBody();
 
         List<String> roles = claims.get("roles", List.class);
+
         return roles.stream()
                 .map(SimpleGrantedAuthority::new)
                 .toList();

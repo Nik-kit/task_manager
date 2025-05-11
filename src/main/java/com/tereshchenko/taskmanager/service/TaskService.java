@@ -1,11 +1,12 @@
 package com.tereshchenko.taskmanager.service;
 
+import com.tereshchenko.taskmanager.dto.*;
+import com.tereshchenko.taskmanager.mapper.TaskMapper;
 import com.tereshchenko.taskmanager.model.Comment;
 import com.tereshchenko.taskmanager.model.Task;
 import com.tereshchenko.taskmanager.model.User;
 import com.tereshchenko.taskmanager.repository.DynamicSpecification;
 import com.tereshchenko.taskmanager.repository.TaskRepository;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -23,78 +24,67 @@ public class TaskService {
     private TaskRepository taskRepository;
 
     @Autowired
+    private TaskMapper taskMapper;
+
+    @Autowired
     private UserService userService;
 
-    public Task createTask(Task task){
+    public TaskResponseDTO createTask(TaskRequestCreateDTO dto){
+
+        Task task = taskMapper.toEntity(dto);
 
         User currentUser = userService.getCurrentUser();
 
         task.setAuthor(currentUser);
         task.setCreatedAt(LocalDateTime.now());
 
-        List<Comment> comments = task.getComments();
+        if (dto.executorId() != null) {
 
-        if(comments != null && !comments.isEmpty()){
+            User executor = userService.getUserById(dto.executorId());
 
-            for(Comment comment : comments){
-
-                if(comment.getId() == null) {
-
-                    comment.setAuthor(currentUser);
-                    comment.setTask(task);
-                    comment.setCreatedAt(LocalDateTime.now());
-                }
-            }
+            task.setExecutor(executor);
         }
 
-        return taskRepository.save(task);
+        List<Comment> comments = mapComments(dto.comments(), currentUser, task);
+
+        task.setComments(comments);
+
+        return taskMapper.toDTO(taskRepository.save(task));
     }
 
-    public Task updateTaskWithRoleChecks(Long id, Task updatedTask){
+    public TaskResponseDTO updateTaskWithRoleChecks(Long id, TaskRequestUpdateDTO dto){
 
         Task existingTask = getTaskById(id);
 
         User currentUser = userService.getCurrentUser();
 
-        List<Comment> comments = updatedTask.getComments();
-
         if(userService.hasRole(currentUser, "ROLE_ADMIN")){
 
-            if (updatedTask.getExecutor() != null && updatedTask.getExecutor().getId() != null) {
+            taskMapper.updateTaskFromDTO(dto, existingTask);
 
-                User executor = userService.getUserById(updatedTask.getExecutor().getId());
+            if (dto.executorId() != null) {
 
-                updatedTask.setExecutor(executor);
+                User executor = userService.getUserById(dto.executorId());
+
+                existingTask.setExecutor(executor);
             }
-
-            BeanUtils.copyProperties(updatedTask, existingTask, "id", "comments");
 
         } else if(userService.hasRole(currentUser, "ROLE_USER") && isTaskAssignee(id, currentUser.getEmail())) {
 
-            if (updatedTask.getStatus() != null) {
+            if (dto.status() != null) {
 
-                existingTask.setStatus(updatedTask.getStatus());
+                existingTask.setStatus(dto.status());
             }
         } else {
 
             throw new RuntimeException("Not enough permissions to update the task");
         }
 
-        if(comments != null && !comments.isEmpty()){
+        List<Comment> mapComments = mapComments(dto.comments(), currentUser, existingTask);
 
-            for(Comment comment : comments){
+        existingTask.getComments().addAll(mapComments);
 
-                if(comment.getId() == null) {
-
-                    comment.setAuthor(currentUser);
-                    comment.setTask(existingTask);
-                    comment.setCreatedAt(LocalDateTime.now());
-
-                    existingTask.getComments().add(comment);
-                }
-            }
-        }
-        return taskRepository.save(existingTask);
+        return taskMapper.toDTO(taskRepository.save(existingTask));
     }
 
     public void deleteTask(Long id){
@@ -104,7 +94,9 @@ public class TaskService {
         taskRepository.delete(task);
     }
 
-    public Page<Task> getFilteredTasks(Task filter, int page, int size){
+    public PageResponseDTO<TaskResponseDTO> getFilteredTasks(TaskRequestFilterDTO filterDTO, int page, int size){
+
+        Task filter = taskMapper.toEntity(filterDTO);
 
         if(filter == null){
 
@@ -122,25 +114,31 @@ public class TaskService {
 
         Specification<Task> spec = DynamicSpecification.filterByEntity(filter, "comments");
 
-        return taskRepository.findAll(spec, pageable);
+        Page<Task> taskPage = taskRepository.findAll(spec, pageable);
+
+        return toPageResponseDTO(taskPage);
     }
 
-    public Page<Task> getTasksByAuthor(Long authorId, int page, int size){
+    public PageResponseDTO<TaskResponseDTO> getTasksByAuthor(Long authorId, int page, int size){
 
         Pageable pageable = PageRequest.of(page, size);
 
         User author = userService.getUserById(authorId);
 
-        return taskRepository.findByAuthor(author, pageable);
+        Page<Task> taskPage = taskRepository.findByAuthor(author, pageable);
+
+        return toPageResponseDTO(taskPage);
     }
 
-    public Page<Task> getTasksByExecutor(Long executorId, int page, int size){
+    public PageResponseDTO<TaskResponseDTO> getTasksByExecutor(Long executorId, int page, int size){
 
         Pageable pageable = PageRequest.of(page, size);
 
         User executor = userService.getUserById(executorId);
 
-        return taskRepository.findByExecutor(executor, pageable);
+        Page<Task> taskPage = taskRepository.findByExecutor(executor, pageable);
+
+        return toPageResponseDTO(taskPage);
     }
 
     public Task getTaskById(Long id){
@@ -153,5 +151,40 @@ public class TaskService {
         Task task = getTaskById(taskId);
 
         return task.getExecutor().getUsername().equals(username);
+    }
+
+    private PageResponseDTO<TaskResponseDTO> toPageResponseDTO(Page<Task> taskPage) {
+
+        List<TaskResponseDTO> dtoList = taskPage.getContent().stream()
+                .map(taskMapper::toDTO)
+                .toList();
+
+        return new PageResponseDTO<>(
+                dtoList,
+                taskPage.getNumber(),
+                taskPage.getSize(),
+                taskPage.getTotalPages(),
+                taskPage.getTotalElements(),
+                taskPage.isFirst(),
+                taskPage.isLast()
+        );
+    }
+
+    private List<Comment> mapComments(List<CommentRequestDTO> commentsDTO, User author, Task task) {
+
+        if (commentsDTO == null || commentsDTO.isEmpty()) return List.of();
+
+        return commentsDTO.stream().map(commentDTO -> {
+
+            Comment comment = new Comment();
+
+            comment.setAuthor(author);
+            comment.setTask(task);
+            comment.setCreatedAt(LocalDateTime.now());
+            comment.setContent(commentDTO.content());
+
+            return comment;
+
+        }).toList();
     }
 }

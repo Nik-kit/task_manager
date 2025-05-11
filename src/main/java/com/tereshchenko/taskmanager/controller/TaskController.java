@@ -1,14 +1,17 @@
 package com.tereshchenko.taskmanager.controller;
 
-import com.tereshchenko.taskmanager.model.Task;
+import com.tereshchenko.taskmanager.dto.*;
 import com.tereshchenko.taskmanager.service.TaskService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/tasks")
+@Tag(name = "Task Controller", description = "CRUD operations and filters for managing tasks")
 public class TaskController {
 
     @Autowired
@@ -16,47 +19,58 @@ public class TaskController {
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public Task createTask(@RequestBody Task task){
+    @Operation(summary = "Create a new task",
+            description = "Creates a new task. Required: title, description. Optional: status, priority, executorId, comments.")
+    public TaskResponseDTO createTask(@Valid @RequestBody TaskRequestCreateDTO dto){
 
-        return taskService.createTask(task);
+        return taskService.createTask(dto);
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN') or (hasRole('USER') and @taskService.isTaskAssignee(#id, authentication.name))")
-    public Task updateTask(@PathVariable Long id, @RequestBody Task updatedTask){
+    @Operation(summary = "Update a task",
+            description = "Updates task fields by ID. Accessible to ADMIN or the assigned USER. Optional fields: title, description, status, priority, executorId, comments.")
+    public TaskResponseDTO updateTask(@PathVariable Long id,@Valid @RequestBody TaskRequestUpdateDTO dto){
 
-        return taskService.updateTaskWithRoleChecks(id, updatedTask);
+        return taskService.updateTaskWithRoleChecks(id, dto);
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Delete a task", description = "Deletes a task by ID. Only accessible to ADMIN.")
     public void deleteTask(@PathVariable Long id){
 
         taskService.deleteTask(id);
     }
 
     @PostMapping("/filter")
-    public Page<Task> getFilteredTasks(@RequestBody(required = false) Task filter,
-                                       @RequestParam(defaultValue = "0") int page,
-                                       @RequestParam(defaultValue = "20") int size){
+    @Operation(summary = "Filter tasks",
+            description = "Returns tasks based on optional filter criteria(createdAt, title, description, status, priority, author, executor). Supports pagination. Accessible to ADMIN or the assigned USER.")
+    public PageResponseDTO<TaskResponseDTO> getFilteredTasks(@RequestBody(required = false) TaskRequestFilterDTO filter,
+                                                             @RequestParam(defaultValue = "0") int page,
+                                                             @RequestParam(defaultValue = "20") int size){
 
         return taskService.getFilteredTasks(filter, page, size);
     }
 
     @GetMapping("/executor/{executorId}")
     @PreAuthorize("hasRole('ADMIN') or (hasRole('USER') and #executorId == principal.id)")
-    public Page<Task> getTasksByExecutor(@PathVariable Long executorId,
-                                       @RequestParam(defaultValue = "0") int page,
-                                       @RequestParam(defaultValue = "10") int size){
+    @Operation(summary = "Get tasks by executor",
+            description = "Returns a page of tasks by executor ID. Accessible to ADMIN or the executor.")
+    public PageResponseDTO<TaskResponseDTO> getTasksByExecutor(@PathVariable Long executorId,
+                                                               @RequestParam(defaultValue = "0") int page,
+                                                               @RequestParam(defaultValue = "20") int size){
 
         return taskService.getTasksByExecutor(executorId, page, size);
     }
 
     @GetMapping("/author/{authorId}")
-    @PreAuthorize("hasRole('ADMIN') or (hasRole('USER') and #authorId == principal.id)")
-    public Page<Task> getTasksByAuthor(@PathVariable Long authorId,
-                                         @RequestParam(defaultValue = "0") int page,
-                                         @RequestParam(defaultValue = "10") int size){
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Get tasks by author",
+            description = "Returns a page of tasks by author ID. Accessible to ADMIN or to the USER if they are the executor of these tasks.")
+    public PageResponseDTO<TaskResponseDTO> getTasksByAuthor(@PathVariable Long authorId,
+                                                             @RequestParam(defaultValue = "0") int page,
+                                                             @RequestParam(defaultValue = "20") int size){
 
         return taskService.getTasksByAuthor(authorId, page, size);
     }
