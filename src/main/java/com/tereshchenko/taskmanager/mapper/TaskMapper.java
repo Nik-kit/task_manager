@@ -21,10 +21,12 @@ public interface TaskMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "author", ignore = true)
-    @Mapping(target = "executor", ignore = true)
+    @Mapping(target = "executor", source = "executorId", qualifiedByName = "mapIdToUser")
     @Mapping(target = "comments", ignore = true)
     Task toEntity(TaskRequestCreateDTO dto);
 
+    @Mapping(target = "author", source = "authorId", qualifiedByName = "mapIdToUser")
+    @Mapping(target = "executor", source = "executorId", qualifiedByName = "mapIdToUser")
     @Mapping(target = "comments", ignore = true)
     Task toEntity(TaskRequestFilterDTO dto);
 
@@ -33,7 +35,7 @@ public interface TaskMapper {
     @Mapping(target = "title", qualifiedByName = "isNotBlank")
     @Mapping(target = "description", qualifiedByName = "isNotBlank")
     @Mapping(target = "author", ignore = true)
-    @Mapping(target = "executor", ignore = true)
+    @Mapping(target = "executor", source = "executorId", qualifiedByName = "mapIdToUser")
     @Mapping(target = "comments", ignore = true)
     void updateTaskFromDTO(TaskRequestUpdateDTO dto, @MappingTarget Task task);
 }

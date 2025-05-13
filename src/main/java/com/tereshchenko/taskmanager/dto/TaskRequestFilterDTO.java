@@ -23,15 +23,18 @@ public record TaskRequestFilterDTO (
     String title,
 
     @Size(max = 1000, message = "Description should not exceed 1000 characters")
-    @Schema(description = "Updated task description", example = "User still can't log in even after reset")
+    @Schema(description = "Description of the task", example = "User still can't log in even after reset")
     String description,
 
-    @Schema(description = "Updated task status", example = "COMPLETED")
+    @Schema(description = "Status of the task", example = "COMPLETED")
     Status status,
 
-    @Schema(description = "Updated task priority", example = "MEDIUM")
+    @Schema(description = "Priority of the task", example = "MEDIUM")
     Priority priority,
 
-    @Schema(description = "Updated executor ID", example = "4")
+    @Schema(description = "Author ID of the task", example = "4")
+    Long authorId,
+
+    @Schema(description = "Executor ID of the task", example = "4")
     Long executorId
 ){}

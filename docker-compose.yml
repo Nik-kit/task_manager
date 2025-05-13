@@ -1,0 +1,38 @@
+services:
+  backend:
+    build:
+      context: .
+    container_name: taskmanager-app
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/task_manager_db?useSSL=false&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: bestuser
+      SPRING_DATASOURCE_PASSWORD: bestuser
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      JWT_SECRET: Lz9+5PLJ3XJgyM5ZVg9k/BXc1X3c0tJ6Z5+oE1PqvQo=
+
+  db:
+    image: mysql:8.0
+    container_name: taskmanager-db
+    restart: always
+    environment:
+      MYSQL_DATABASE: task_manager_db
+      MYSQL_USER: bestuser
+      MYSQL_PASSWORD: bestuser
+      MYSQL_ROOT_PASSWORD: bestuser
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "bestuser", "-pbestuser" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mysql_data:

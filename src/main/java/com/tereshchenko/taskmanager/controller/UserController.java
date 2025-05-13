@@ -3,7 +3,6 @@ package com.tereshchenko.taskmanager.controller;
 import com.tereshchenko.taskmanager.dto.UserRequestCreateDTO;
 import com.tereshchenko.taskmanager.dto.UserResponseDTO;
 import com.tereshchenko.taskmanager.dto.UserRequestUpdateDTO;
-import com.tereshchenko.taskmanager.model.User;
 import com.tereshchenko.taskmanager.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

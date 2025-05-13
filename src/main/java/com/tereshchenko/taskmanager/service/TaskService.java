@@ -38,13 +38,6 @@ public class TaskService {
         task.setAuthor(currentUser);
         task.setCreatedAt(LocalDateTime.now());
 
-        if (dto.executorId() != null) {
-
-            User executor = userService.getUserById(dto.executorId());
-
-            task.setExecutor(executor);
-        }
-
         List<Comment> comments = mapComments(dto.comments(), currentUser, task);
 
         task.setComments(comments);
@@ -61,13 +54,6 @@ public class TaskService {
         if(userService.hasRole(currentUser, "ROLE_ADMIN")){
 
             taskMapper.updateTaskFromDTO(dto, existingTask);
-
-            if (dto.executorId() != null) {
-
-                User executor = userService.getUserById(dto.executorId());
-
-                existingTask.setExecutor(executor);
-            }
 
         } else if(userService.hasRole(currentUser, "ROLE_USER") && isTaskAssignee(id, currentUser.getEmail())) {
 
